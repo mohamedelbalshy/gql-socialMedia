@@ -43,8 +43,20 @@ const getUserByEmail = async (email) => {
     const results = await pool.query("SELECT * FROM users WHERE email = $1", [
       email,
     ]);
-    console.log(results.rows);
     return results.rows;
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const getUserByUsername = async (username) => {
+  try {
+    const results = await pool.query(
+      "SELECT * FROM users WHERE username = $1",
+      [username]
+    );
+    // console.log(results.rows);
+    return results.rows[0];
   } catch (error) {
     console.error(error);
   }
@@ -65,10 +77,34 @@ const addUser = async (email, password, username) => {
   }
 };
 
+const addPost = async (body, username) => {
+  try {
+    const posts = await pool.query(
+      `INSERT INTO posts (body, username, created_at) VALUES ($1, $2, $3) RETURNING *`,
+      [body, username, new Date()]
+    );
+    return posts.rows[0];
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const getUsers = async () => {
+  try {
+    const results = await pool.query("SELECT * FROM users ORDER BY id ASC");
+    return results.rows;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 module.exports = {
   getPosts,
   getPostById,
   getUserById,
   getUserByEmail,
+  getUserByUsername,
   addUser,
+  getUsers,
+  addPost,
 };

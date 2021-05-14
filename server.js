@@ -9,10 +9,11 @@ const schema = require("./graphql/shcema");
 
 app.use(
   "/graphql",
-  graphqlHTTP({
+  graphqlHTTP((req) => ({
     schema,
     graphiql: true,
-  })
+    context: req,
+  }))
 );
 
 app.listen(port, () => {
