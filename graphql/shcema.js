@@ -5,7 +5,9 @@ const {
   GraphQLNonNull,
   GraphQLSchema,
   GraphQLList,
+  GraphQLInt,
 } = require("graphql");
+
 const bcrypt = require("bcrypt");
 
 const db = require("../queries");
@@ -15,21 +17,27 @@ const SECRETKEY = "SECRET KEY ";
 
 const isAuth = require("../middlewares/isAuth");
 
+const { getPostById } = require("./resolvers");
+
 const PostType = new GraphQLObjectType({
   name: "Post",
   fields: () => ({
     id: { type: GraphQLID },
-    username: {
+    user: {
       type: UserType,
       async resolve(parent, args) {
-        // console.log(parent, "Parent");
-        const user = await db.getUserByUsername(parent.username);
-        console.log(user);
-        return user;
+        return await db.getUserById(parent.user_id);
       },
     },
     body: { type: new GraphQLNonNull(GraphQLString) },
     created_at: { type: new GraphQLNonNull(GraphQLString) },
+    likes: { type: new GraphQLNonNull(GraphQLInt) },
+    comments: {
+      type: new GraphQLList(CommentType),
+      async resolve(parent, args) {
+        return await db.getCommentsByPost(parent.id);
+      },
+    },
   }),
 });
 
@@ -45,13 +53,34 @@ const UserType = new GraphQLObjectType({
   }),
 });
 
+const CommentType = new GraphQLObjectType({
+  name: "Comment",
+  fields: () => ({
+    id: { type: new GraphQLNonNull(GraphQLID) },
+    user: {
+      type: UserType,
+      async resolve(parent, args) {
+        return await db.getUserById(parent.user_id);
+      },
+    },
+    post: {
+      type: PostType,
+      async resolve(parent, args) {
+        const post = await db.getPostById(parent.post_id);
+        return post;
+      },
+    },
+    body: { type: new GraphQLNonNull(GraphQLString) },
+    created_at: { type: new GraphQLNonNull(GraphQLString) },
+  }),
+});
+
 const RootQuery = new GraphQLObjectType({
   name: "RootQueryType",
   fields: {
     posts: {
       type: new GraphQLList(PostType),
       resolve: async (parent, args, context) => {
-        console.log("context", context.headers);
         const posts = await db.getPosts();
         return posts;
       },
@@ -61,6 +90,17 @@ const RootQuery = new GraphQLObjectType({
       resolve: async (parent, args) => {
         const users = await db.getUsers();
         return users;
+      },
+    },
+
+    myPosts: {
+      type: new GraphQLList(PostType),
+      resolve: async (parent, args, context) => {
+        const user = isAuth(context);
+        if (!user) {
+          throw new Error("This User not found");
+        }
+        return await db.getPostsByUser(user);
       },
     },
   },
@@ -149,8 +189,37 @@ const Mutation = new GraphQLObjectType({
           throw new Error("This User not found");
         }
 
-        const post = await db.addPost(body, user.username);
+        const post = await db.addPost(body, user.id);
         return post;
+      },
+    },
+
+    addComment: {
+      type: CommentType,
+      args: {
+        body: { type: new GraphQLNonNull(GraphQLString) },
+        post_id: { type: new GraphQLNonNull(GraphQLInt) },
+      },
+      async resolve(parent, args, context) {
+        const { body, post_id } = args;
+        const user = isAuth(context);
+        if (!user) {
+          throw new Error("This User not found");
+        }
+
+        const post = await db.addComment(body, user.id, post_id);
+        return post;
+      },
+    },
+
+    likePost: {
+      type: PostType,
+      args: {
+        post_id: { type: new GraphQLNonNull(GraphQLInt) },
+      },
+      async resolve(parent, args, context) {
+        const { post_id } = args;
+        return await db.likePost(post_id);
       },
     },
   },

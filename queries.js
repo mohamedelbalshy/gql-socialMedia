@@ -20,10 +20,22 @@ const getPosts = async () => {
   }
 };
 
+const getPostsByUser = async (user) => {
+  try {
+    const results = await pool.query(
+      "SELECT * FROM posts WHERE user_id = $1 ",
+      [user.id]
+    );
+    return results.rows;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 const getPostById = async (id) => {
   try {
     const results = await pool.query("SELECT * FROM posts WHERE id = $1", [id]);
-    return results.rows;
+    return results.rows[0];
   } catch (error) {
     console.error(error);
   }
@@ -32,7 +44,7 @@ const getPostById = async (id) => {
 const getUserById = async (id) => {
   try {
     const results = await pool.query("SELECT * FROM users WHERE id = $1", [id]);
-    return results.rows;
+    return results.rows[0];
   } catch (error) {
     console.error(error);
   }
@@ -77,11 +89,11 @@ const addUser = async (email, password, username) => {
   }
 };
 
-const addPost = async (body, username) => {
+const addPost = async (body, user_id) => {
   try {
     const posts = await pool.query(
-      `INSERT INTO posts (body, username, created_at) VALUES ($1, $2, $3) RETURNING *`,
-      [body, username, new Date()]
+      `INSERT INTO posts (body, user_id, created_at) VALUES ($1, $2, $3) RETURNING *`,
+      [body, user_id, new Date()]
     );
     return posts.rows[0];
   } catch (error) {
@@ -98,13 +110,57 @@ const getUsers = async () => {
   }
 };
 
+const getCommentsByPost = async (post_id) => {
+  try {
+    const results = await pool.query(
+      "SELECT * FROM comments WHERE post_id = $1",
+      [post_id]
+    );
+    return results.rows;
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const addComment = async (body, user_id, post_id) => {
+  try {
+    const posts = await pool.query(
+      `INSERT INTO comments (body, user_id, created_at, post_id) VALUES ($1, $2, $3, $4) RETURNING *`,
+      [body, user_id, new Date(), post_id]
+    );
+    return posts.rows[0];
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const likePost = async (post_id) => {
+  ` UPDATE posts SET likes = likes+1 WHERE id = 18;`;
+
+  try {
+    const posts = await pool.query(
+      `UPDATE posts SET likes = likes + 1 WHERE id = $1 RETURNING *`,
+      [post_id]
+    );
+    return posts.rows[0];
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 module.exports = {
-  getPosts,
-  getPostById,
   getUserById,
   getUserByEmail,
   getUserByUsername,
   addUser,
   getUsers,
+
+  getPosts,
+  getPostById,
   addPost,
+  likePost,
+  getPostsByUser,
+
+  getCommentsByPost,
+  addComment,
 };

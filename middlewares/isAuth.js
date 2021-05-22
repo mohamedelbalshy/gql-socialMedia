@@ -3,7 +3,7 @@ const SECRETKEY = "SECRET KEY ";
 
 const isAuth = (context) => {
   context.headers.token =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjMsImVtYWlsIjoieHl6QHh5ei5jb20iLCJ1c2VybmFtZSI6ImJhbHNoeSIsImlhdCI6MTYyMTAxMDAyNH0.wFjfCiKeLGgxeXKkySm2K2QekOx0WYY4vMyQRhfvr_8";
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjQsImVtYWlsIjoiYmFsc2h5QGdtYWlsLmNvbSIsInVzZXJuYW1lIjoiYmFsc2h5IiwiaWF0IjoxNjIxMDM2MjQ2fQ.Qhz4qkkgFogUdHRo-DK_1ACVw6q4IdmRN9IRT-W8kl0";
   const token = context.headers.token;
   if (token) {
     const user = jwt.verify(token, SECRETKEY);
